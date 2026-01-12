@@ -1,3 +1,5 @@
+![CC-ACM Header](assets/header.jpg)
+
 # CC-ACM (Claude Code Automatic Context Manager)
 
 Automatic context handoff for Claude Code. When your session hits 60% context usage, a dialog prompts you to generate a summary and open a fresh session with full context.
