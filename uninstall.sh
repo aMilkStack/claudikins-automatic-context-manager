@@ -108,7 +108,7 @@ elif [ -f "$STATUSLINE" ]; then
         # Create backup before modifying
         cp "$STATUSLINE" "$STATUSLINE.bak.uninstall"
         # Remove the injected lines (everything from the comment to the script call)
-        sed -i '/# Auto-trigger handoff at 60%/,/handoff-prompt.sh.*&$/d' "$STATUSLINE"
+        sed -i '/# --- CC-ACM START ---/,/# --- CC-ACM END ---/d' "$STATUSLINE"
         echo -e "${GREEN}✓${RESET} Statusline patch removed"
         echo -e "${GRAY}  Backup saved to: $STATUSLINE.bak.uninstall${RESET}"
     else

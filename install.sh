@@ -106,7 +106,7 @@ if [ -f "$STATUSLINE" ]; then
         # Add the handoff trigger after the 60% color setting
         sed -i "/ctx_color='\\\\033\[31m'/a\\
 \\
-        # Auto-trigger handoff at 60% (only once per session, with snooze support)\\
+        # --- CC-ACM START ---\\
         session_id=\$(echo \"\$input\" | grep -o '\"session_id\":\"[^\"]*\"' | sed 's/.*:\"//;s/\"//')\\
         transcript=\$(echo \"\$input\" | grep -o '\"transcript_path\":\"[^\"]*\"' | sed 's/.*:\"//;s/\"//')\\
         flag_file=\"/tmp/handoff-triggered-\${session_id}\"\\
@@ -129,7 +129,8 @@ if [ -f "$STATUSLINE" ]; then
         if [ \"\$should_trigger\" = true ]; then\\
             touch \"\$flag_file\"\\
             ~/.claude/scripts/handoff-prompt.sh \"\$transcript\" \"\$session_id\" \&\\
-        fi" "$STATUSLINE"
+        fi\\
+        # --- CC-ACM END ---" "$STATUSLINE"
 
         echo -e "${GREEN}✓${RESET} Statusline patched"
     fi
