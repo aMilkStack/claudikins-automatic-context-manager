@@ -1,0 +1,15 @@
+{
+  "name": "cc-acm",
+  "version": "1.0.0",
+  "description": "Claude Code Automatic Context Manager - Interactive configuration and management skills",
+  "skills": [
+    {
+      "path": "skills/acm-config",
+      "enabled": true
+    },
+    {
+      "path": "skills/acm-handoff",
+      "enabled": true
+    }
+  ]
+}
