@@ -126,6 +126,3 @@ Removes scripts, hooks, skills, config, and temp files. Restores statusline from
 
 **Claude doesn't auto-load handoff**: Check `/acm:handoff` skill exists with real content (not "No Active Handoff").
 
-## License
-
-MIT
