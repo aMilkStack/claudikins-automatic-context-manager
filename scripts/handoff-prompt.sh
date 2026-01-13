@@ -7,17 +7,18 @@ SESSION_ID="$2"
 FLAG_FILE="/tmp/handoff-triggered-${SESSION_ID}"
 SNOOZE_FILE="/tmp/handoff-snooze-${SESSION_ID}"
 
-# Show styled dialog matching Claude aesthetic
+# Show styled dialog matching Claude aesthetic with vibrant cyberpunk vibes
 RESULT=$(powershell.exe -Command "
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
-# Colors matching Claude/terminal dark theme
+# Vibrant colors matching the CC-ACM header aesthetic
 \$bgColor = [System.Drawing.Color]::FromArgb(24, 24, 27)
-\$fgColor = [System.Drawing.Color]::FromArgb(210, 210, 215)
-\$mutedColor = [System.Drawing.Color]::FromArgb(140, 140, 150)
-\$accentColor = [System.Drawing.Color]::FromArgb(217, 119, 87)
+\$fgColor = [System.Drawing.Color]::FromArgb(230, 230, 235)
+\$mutedColor = [System.Drawing.Color]::FromArgb(160, 160, 170)
+\$accentColor = [System.Drawing.Color]::FromArgb(255, 140, 80)
+\$pinkAccent = [System.Drawing.Color]::FromArgb(255, 120, 200)
 \$btnBg = [System.Drawing.Color]::FromArgb(39, 39, 42)
 
 \$form = New-Object System.Windows.Forms.Form
@@ -31,11 +32,11 @@ Add-Type -AssemblyName System.Drawing
 \$form.ForeColor = \$fgColor
 \$form.TopMost = \$true
 
-# Header
+# Header with emoji
 \$header = New-Object System.Windows.Forms.Label
 \$header.Location = New-Object System.Drawing.Point(15, 15)
 \$header.AutoSize = \$true
-\$header.Text = 'Context Handoff'
+\$header.Text = '⚡ Context Getting Full! ⚡'
 \$header.Font = New-Object System.Drawing.Font('Segoe UI Semibold', 12)
 \$header.ForeColor = \$accentColor
 \$form.Controls.Add(\$header)
@@ -44,44 +45,49 @@ Add-Type -AssemblyName System.Drawing
 \$label = New-Object System.Windows.Forms.Label
 \$label.Location = New-Object System.Drawing.Point(15, 45)
 \$label.AutoSize = \$true
-\$label.Text = 'Context at 60%. Start fresh with handoff?'
+\$label.Text = 'You''re at 60% context. Start a fresh session with a summary?'
 \$label.Font = New-Object System.Drawing.Font('Segoe UI', 10)
 \$label.ForeColor = \$mutedColor
 \$form.Controls.Add(\$label)
 
-# Buttons - using AutoSize for reliable text fitting
+# Buttons with clearer labels
 \$yesBtn = New-Object System.Windows.Forms.Button
 \$yesBtn.Location = New-Object System.Drawing.Point(15, 90)
 \$yesBtn.Size = New-Object System.Drawing.Size(120, 35)
-\$yesBtn.Text = 'Handoff'
+\$yesBtn.Text = 'Let''s Go! 🚀'
 \$yesBtn.FlatStyle = 'Flat'
-\$yesBtn.Font = New-Object System.Drawing.Font('Segoe UI', 10)
+\$yesBtn.Font = New-Object System.Drawing.Font('Segoe UI', 9, [System.Drawing.FontStyle]::Bold)
 \$yesBtn.BackColor = \$accentColor
 \$yesBtn.ForeColor = \$bgColor
+\$yesBtn.Cursor = [System.Windows.Forms.Cursors]::Hand
 \$yesBtn.Add_Click({ \$form.Tag = 'Yes'; \$form.Close() })
 \$form.Controls.Add(\$yesBtn)
+\$form.AcceptButton = \$yesBtn
 
 \$remindBtn = New-Object System.Windows.Forms.Button
 \$remindBtn.Location = New-Object System.Drawing.Point(145, 90)
 \$remindBtn.Size = New-Object System.Drawing.Size(120, 35)
-\$remindBtn.Text = 'In 5 min'
+\$remindBtn.Text = 'Give me 5 🕐'
 \$remindBtn.FlatStyle = 'Flat'
-\$remindBtn.Font = New-Object System.Drawing.Font('Segoe UI', 10)
+\$remindBtn.Font = New-Object System.Drawing.Font('Segoe UI', 9)
 \$remindBtn.BackColor = \$btnBg
 \$remindBtn.ForeColor = \$fgColor
+\$remindBtn.Cursor = [System.Windows.Forms.Cursors]::Hand
 \$remindBtn.Add_Click({ \$form.Tag = 'Remind'; \$form.Close() })
 \$form.Controls.Add(\$remindBtn)
 
 \$noBtn = New-Object System.Windows.Forms.Button
 \$noBtn.Location = New-Object System.Drawing.Point(275, 90)
 \$noBtn.Size = New-Object System.Drawing.Size(120, 35)
-\$noBtn.Text = 'Dismiss'
+\$noBtn.Text = 'Not Now'
 \$noBtn.FlatStyle = 'Flat'
-\$noBtn.Font = New-Object System.Drawing.Font('Segoe UI', 10)
+\$noBtn.Font = New-Object System.Drawing.Font('Segoe UI', 9)
 \$noBtn.BackColor = \$btnBg
-\$noBtn.ForeColor = \$fgColor
+\$noBtn.ForeColor = \$mutedColor
+\$noBtn.Cursor = [System.Windows.Forms.Cursors]::Hand
 \$noBtn.Add_Click({ \$form.Tag = 'No'; \$form.Close() })
 \$form.Controls.Add(\$noBtn)
+\$form.CancelButton = \$noBtn
 
 \$form.Add_Shown({\$form.Activate()})
 [void]\$form.ShowDialog()
@@ -106,13 +112,44 @@ esac
 
 # Find transcript if not provided
 if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
-    TRANSCRIPT_PATH=$(find ~/.claude/projects -name "*.jsonl" -type f -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -1 | cut -d' ' -f2-)
+    # Use null-delimited find for paths with spaces
+    TRANSCRIPT_PATH=$(find ~/.claude/projects -name "*.jsonl" -type f -printf '%T@\0%p\0' 2>/dev/null | \
+        sort -z -n | tail -z -n 1 | cut -z -d$'\0' -f2 | tr -d '\0')
 fi
 
 if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
     powershell.exe -Command "[System.Windows.Forms.MessageBox]::Show('Could not find transcript file', 'Error', 'OK', 'Error')" 2>/dev/null
     exit 1
 fi
+
+# Show progress indicator
+powershell.exe -Command "
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+
+\$progressForm = New-Object System.Windows.Forms.Form
+\$progressForm.Text = 'CC-ACM'
+\$progressForm.Size = New-Object System.Drawing.Size(400, 140)
+\$progressForm.StartPosition = 'CenterScreen'
+\$progressForm.FormBorderStyle = 'FixedDialog'
+\$progressForm.MaximizeBox = \$false
+\$progressForm.MinimizeBox = \$false
+\$progressForm.BackColor = [System.Drawing.Color]::FromArgb(24, 24, 27)
+\$progressForm.TopMost = \$true
+
+\$label = New-Object System.Windows.Forms.Label
+\$label.Location = New-Object System.Drawing.Point(20, 30)
+\$label.Size = New-Object System.Drawing.Size(360, 60)
+\$label.Text = '⚡ Generating handoff summary...`n`nThis might take a few seconds'
+\$label.Font = New-Object System.Drawing.Font('Segoe UI', 10)
+\$label.ForeColor = [System.Drawing.Color]::FromArgb(255, 140, 80)
+\$label.TextAlign = 'MiddleCenter'
+\$progressForm.Controls.Add(\$label)
+
+\$progressForm.Show()
+\$progressForm.Refresh()
+" 2>/dev/null &
+PROGRESS_PID=$!
 
 # Extract conversation from JSONL
 CONVERSATION=$(cat "$TRANSCRIPT_PATH" | grep -E '"type":"(user|assistant)"' | \
@@ -128,20 +165,37 @@ for line in sys.stdin:
             content = ' '.join([c.get('text', '') for c in content if isinstance(c, dict)])
         if role in ('user', 'assistant') and content:
             msgs.append(f'{role.upper()}: {content[:500]}')
-    except: pass
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        pass
 print('\n'.join(msgs[-20:]))
 " 2>/dev/null)
 
 # Generate handoff via claude -p
 HANDOFF=$(echo "$CONVERSATION" | claude -p "Generate a concise handoff summary (under 500 tokens) for continuing this conversation. Include: current task, progress made, next steps, key decisions. Format as markdown." 2>/dev/null)
 
+# Close progress dialog
+kill $PROGRESS_PID 2>/dev/null || true
+pkill -f "CC-ACM.*progressForm" 2>/dev/null || true
+
 if [ -z "$HANDOFF" ]; then
     powershell.exe -Command "[System.Windows.Forms.MessageBox]::Show('Failed to generate handoff', 'Error', 'OK', 'Error')" 2>/dev/null
     exit 1
 fi
 
-# Save handoff
-echo "$HANDOFF" > /tmp/claude-handoff.txt
+# Save handoff with header explaining context
+cat > /tmp/claude-handoff.txt << EOF
+# 🔄 Context Handoff from Previous Session
+
+This is an automatic handoff summary generated by CC-ACM when your previous session reached 60% context.
+
+---
+
+$HANDOFF
+
+---
+
+*Generated by CC-ACM (Claude Code Automatic Context Manager)*
+EOF
 
 # Open new Warp tab with claude + handoff
 powershell.exe -Command "
