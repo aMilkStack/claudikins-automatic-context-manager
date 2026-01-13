@@ -111,7 +111,13 @@ if ('$DIALOG_STYLE' -eq 'minimal') {
 \$form.Add_Shown({\$form.Activate()})
 [void]\$form.ShowDialog()
 \$form.Tag
-" 2>/dev/null | tr -d '\r')
+" 2>&1 | tr -d '\r')
+
+# Check if dialog failed to open
+if [ -z "$RESULT" ]; then
+    echo "CC-ACM: Dialog failed to open. Check PowerShell/WinForms availability." >&2
+    exit 1
+fi
 
 case "$RESULT" in
     "Yes")
@@ -225,7 +231,8 @@ $GIT_RECENT
 fi
 
 # 3. Generate handoff with improved prompt
-HANDOFF=$(cat << EOF | claude -p 2>/dev/null
+CLAUDE_STDERR=$(mktemp)
+HANDOFF=$(cat << EOF | claude -p 2>"$CLAUDE_STDERR"
 You are generating a handoff summary for a developer who reached their context limit and needs to continue in a fresh session.
 
 Analyze the conversation below and create a strategic handoff summary (under $SUMMARY_TOKENS tokens) that includes:
@@ -250,9 +257,16 @@ kill $PROGRESS_PID 2>/dev/null || true
 pkill -f "CC-ACM.*progressForm" 2>/dev/null || true
 
 if [ -z "$HANDOFF" ]; then
-    powershell.exe -Command "[System.Windows.Forms.MessageBox]::Show('Failed to generate handoff', 'Error', 'OK', 'Error')" 2>/dev/null
+    ERROR_DETAIL=""
+    if [ -s "$CLAUDE_STDERR" ]; then
+        ERROR_DETAIL=$(head -c 200 "$CLAUDE_STDERR")
+    fi
+    rm -f "$CLAUDE_STDERR"
+
+    powershell.exe -Command "[System.Windows.Forms.MessageBox]::Show('Failed to generate handoff.`n`n$ERROR_DETAIL', 'CC-ACM Error', 'OK', 'Error')" 2>/dev/null
     exit 1
 fi
+rm -f "$CLAUDE_STDERR"
 
 # Save handoff to skill file
 HANDOFF_SKILL="$HOME/.claude/skills/acm-handoff/SKILL.md"
