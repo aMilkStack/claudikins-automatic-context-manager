@@ -6,6 +6,5 @@
     "name": "Ethan Lee",
     "url": "https://github.com/aMilkStack"
   },
-  "repository": "https://github.com/aMilkStack/claudikins-automatic-context-manager",
-  "hooks": "./hooks/hooks.json"
+  "repository": "https://github.com/aMilkStack/claudikins-automatic-context-manager"
 }
