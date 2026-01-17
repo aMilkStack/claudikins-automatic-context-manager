@@ -1,4 +1,4 @@
-![Claudikins ACM Banner](banner.png)
+![Claudikins ACM Banner](assets/banner.png)
 
 **Automatic context management for Claude Code.** Monitors token usage and triggers at 60% context saturation, prompting for session handoff with an auto-generated summary that opens in a fresh session.
 
