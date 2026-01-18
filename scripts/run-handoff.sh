@@ -57,9 +57,6 @@ EOF
 
 echo "Handoff saved to: $HANDOFF_FILE"
 
-# Clean up the hook that triggered this
-rm -f ".claude/hookify.handoff-request.local.md"
-
 # Launch new terminal with claude
 echo "Opening new session..."
 

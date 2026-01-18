@@ -1,5 +1,7 @@
 ![Claudikins ACM Banner](assets/banner.png)
 
+> 🚧 **v1.1.0 IN TESTING** - Native hooks implementation. May have rough edges. Report issues [here](https://github.com/elb-pr/claudikins-automatic-context-manager/issues).
+
 **Automatic context management for Claude Code.** Monitors token usage and triggers at 60% context saturation, prompting for session handoff with an auto-generated summary that opens in a fresh session.
 
 ## Requirements
@@ -13,12 +15,12 @@ LLM attention weights distribute across all context tokens. As context fills, pe
 ## What It Does
 
 1. Statusline displays current context percentage
-2. At 60% threshold, injects a hookify rule to intercept Claude's next response
-3. Hook triggers native `AskUserQuestion` prompt for handoff confirmation
-4. On confirmation, generates context summary via `claude -p`
-5. Saves summary to `.claude/claudikins-acm/handoff.md`
+2. At 60% threshold, creates flag file for `UserPromptSubmit` hook
+3. Hook injects context prompting Claude to use `AskUserQuestion` for handoff confirmation
+4. On confirmation, captures structured state (todos, modified files, git status)
+5. Saves state to `.claude/claudikins-acm/handoff-state.json` and human-readable `handoff.md`
 6. Opens new terminal session with `claude` command
-7. `SessionStart` hook detects and loads handoff file into fresh context
+7. `SessionStart` hook detects and loads structured state into fresh context
 
 ## Installation
 
@@ -43,16 +45,17 @@ git clone https://github.com/elb-pr/claudikins-automatic-context-manager.git
 flowchart TD
     A[Statusline monitors context] -->|every 300ms| B{Context >= 60%?}
     B -->|No| A
-    B -->|Yes| C[Inject hookify rule]
-    C --> D[AskUserQuestion prompt]
-    D --> E{User response}
-    E -->|YES| F[Generate summary via claude -p]
-    F --> G[Save to handoff.md]
-    G --> H[Open new terminal session]
-    H --> I[SessionStart hook loads handoff]
-    E -->|SNOOZE| J[Wait 5 minutes]
-    J --> A
-    E -->|DISMISS| K[Disable for session]
+    B -->|Yes| C[Create threshold flag file]
+    C --> D[UserPromptSubmit hook fires]
+    D --> E[AskUserQuestion prompt]
+    E --> F{User response}
+    F -->|YES| G[Capture structured state]
+    G --> H[Save handoff-state.json + handoff.md]
+    H --> I[Open new terminal session]
+    I --> J[SessionStart hook loads state]
+    F -->|SNOOZE| K[Wait 5 minutes]
+    K --> A
+    F -->|DISMISS| L[Disable for session]
 ```
 
 ## Configuration
