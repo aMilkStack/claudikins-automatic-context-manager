@@ -108,11 +108,8 @@ if [ -n "$has_tokens" ]; then
         fi
 
         if [ "$should_trigger" = true ]; then
-            touch "$flag_file"
-            # Inject hookify rule instead of external popup
-            # Claude will ask user on next prompt
-            SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-            "$SCRIPT_DIR/inject-handoff-hook.sh" "$pct" 2>/dev/null &
+            # Create flag file with percentage (native hook reads this)
+            echo "$pct" > "/tmp/acm-threshold-${session_id}"
         fi
         # --- Claudikins Automatic Context Manager END ---
     elif [ "$pct" -ge 40 ]; then
