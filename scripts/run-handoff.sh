@@ -9,8 +9,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="$HOME/.claude/claudikins-acm.conf"
 [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
 
-SUMMARY_TOKENS="${SUMMARY_TOKENS:-500}"
-
 # Find most recent transcript
 TRANSCRIPT=$(find ~/.claude/projects -name "*.jsonl" -type f -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -1 | cut -d' ' -f2-)
 
@@ -19,60 +17,18 @@ if [ -z "$TRANSCRIPT" ] || [ ! -f "$TRANSCRIPT" ]; then
     exit 1
 fi
 
-echo "Generating handoff summary..."
+echo "Capturing structured state..."
 
-# Extract recent conversation
-CONVERSATION=$(cat "$TRANSCRIPT" | grep -E '"type":"(user|assistant)"' | tail -50 | \
-    python3 -c "
-import sys, json
-msgs = []
-for line in sys.stdin:
-    try:
-        d = json.loads(line)
-        role = d.get('type', '')
-        content = d.get('message', {}).get('content', '')
-        if isinstance(content, list):
-            content = ' '.join([c.get('text', '') for c in content if isinstance(c, dict)])
-        if role in ('user', 'assistant') and content:
-            msgs.append(f'{role.upper()}: {content[:500]}')
-    except: pass
-print('\n'.join(msgs[-20:]))
-" 2>/dev/null)
+# Capture structured state (replaces prose summary)
+export TRANSCRIPT
+STATE_FILE=$("$SCRIPT_DIR/capture-state.sh" "$(pwd)" "$TRANSCRIPT")
 
-# Get git context
-GIT_CONTEXT=""
-if command -v git &> /dev/null && git rev-parse --is-inside-work-tree &> /dev/null; then
-    GIT_CONTEXT=$(cat <<EOF
-
-GIT CONTEXT:
-- Branch: $(git branch --show-current 2>/dev/null)
-- Recent commits: $(git log --oneline -3 2>/dev/null | tr '\n' '; ')
-- Modified files: $(git status --short 2>/dev/null | head -5 | tr '\n' '; ')
-EOF
-)
-fi
-
-# Generate summary via claude -p
-SUMMARY=$(echo "$CONVERSATION$GIT_CONTEXT" | claude -p "Generate a concise handoff summary (under $SUMMARY_TOKENS tokens) for continuing this conversation in a new session.
-
-Include:
-1. Current objective - what we're working on
-2. Progress so far - what's been done
-3. Active work - what was in progress
-4. Key decisions - important choices made
-5. Next steps - what to do next
-
-Format as markdown. Be specific and actionable.
-
-CONVERSATION:
-" 2>/dev/null)
-
-if [ -z "$SUMMARY" ]; then
-    echo "ERROR: Failed to generate summary" >&2
+if [ ! -f "$STATE_FILE" ]; then
+    echo "ERROR: Failed to capture state" >&2
     exit 1
 fi
 
-# Save to project-local location
+# Generate human-readable handoff.md from structured state
 HANDOFF_DIR=".claude/claudikins-acm"
 mkdir -p "$HANDOFF_DIR"
 HANDOFF_FILE="$HANDOFF_DIR/handoff.md"
@@ -82,9 +38,20 @@ cat > "$HANDOFF_FILE" << EOF
 
 *Generated: $(date)*
 
-$SUMMARY
+## Current Objective
+$(jq -r '.context.current_objective // "Not captured"' "$STATE_FILE")
+
+## Active Todos
+$(jq -r '.context.active_todos[] | "- [\(.status)] \(.content)"' "$STATE_FILE" 2>/dev/null || echo "None")
+
+## Recent Files Modified
+$(jq -r '.context.key_files_modified[]' "$STATE_FILE" 2>/dev/null | head -5 || echo "None")
+
+## Git Status
+Branch: $(jq -r '.git.branch // "unknown"' "$STATE_FILE")
 
 ---
+*Full state: .claude/claudikins-acm/handoff-state.json*
 *Use /acm:handoff to review this context*
 EOF
 
