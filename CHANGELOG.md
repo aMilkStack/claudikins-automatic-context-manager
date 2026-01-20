@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2-beta] - 2026-01-20
+
+### Fixed
+
+- Skill descriptions CSO-optimized (now start with "Use when...")
+- Standardized plugin.json metadata format
+
+---
+
 ## [1.1.1-beta] - 2026-01-19
 
 ### Fixed

@@ -1,6 +1,6 @@
 ---
 name: acm-handoff
-description: Context handoff from a previous Claude Code session. Reads the handoff summary when context reached the configured threshold. Use this to understand what was being worked on and continue seamlessly.
+description: Use when resuming work from a previous session that reached context threshold, or when a handoff summary exists. Reads handoff state and markdown to restore context, todos, and continue seamlessly.
 ---
 
 # Context Handoff

@@ -1,6 +1,6 @@
 ---
 name: acm-config
-description: Interactively configures Claudikins Automatic Context Manager settings by asking the user questions about trigger threshold, snooze duration, summary length, and other preferences. Use when the user wants to customize Claudikins Automatic Context Manager behavior or runs '/acm:config'.
+description: Use when the user wants to customize Claudikins Automatic Context Manager behavior, configure trigger threshold, snooze duration, summary length, or runs '/acm:config'. Interactively asks questions and saves preferences to config file.
 ---
 
 # Claudikins Automatic Context Manager Interactive Configuration
